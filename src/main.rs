@@ -32,7 +32,7 @@ fn main() -> Result<()> {
     
     let x1 = 2.;
     let y1 = 0.25;
-    let z1 = -1.5;
+    let z1 = -1.;
     let o = 0.75;
     
     s.add(Sphere::from(3., 0., 0., 0.5));

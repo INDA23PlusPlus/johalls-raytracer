@@ -55,16 +55,17 @@ impl Scene {
                     if light_remaining.abs() < 0.0001 {
                         break;
                     }
+                    let normal = -ray.vec_closest(&self).unwrap().normalize();
                     ray = Ray {
                         pos: ray.pos,
-                        dir: ray.vec_closest(&self).unwrap(),
+                        dir: normal,
                     };
 
                     for _ in 0..500 {
                         ray.step(self);
                     }
                     let (c, p) = ray.color(self);
-                    color += light_remaining * c * p;
+                    color += light_remaining * c * (1. - p);
                     light_remaining -= light_remaining * p;
                 }
 

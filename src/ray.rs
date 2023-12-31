@@ -24,7 +24,7 @@ impl Ray {
 
     pub fn step(&mut self, scene: &Scene) {
         let closest = scene.closest(self.pos).unwrap();
-        let d = closest.dist(self.pos);
+        let d = closest.dist(self.pos).clamp(0., 1.);
         self.pos += self.dir * d;
     }
 

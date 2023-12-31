@@ -75,11 +75,16 @@ impl Cuboid {
     }
 
     pub fn dist(&self, p: vec3f) -> f32 {
-        self.vec_to(p).norm()
+        p.sub(self.m).abs().sub(self.r).map(|c| c.max(0.)).norm()
     }
 
     pub fn vec_to(&self, p: vec3f) -> vec3f {
-        p.sub(self.m).abs().sub(self.r).map(|c| c.max(0.))
+        let v = p.sub(self.m).abs().sub(self.r).map(|c| c.max(0.));
+        if self.dist(p + 0.001 * v) < self.dist(p) {
+            v
+        } else {
+            -v
+        }
     }
 }
 
