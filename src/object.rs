@@ -55,11 +55,11 @@ impl Sphere {
     pub fn vec_to(&self, p: vec3f) -> vec3f {
         let is_inside = self.dist(p) == 0.;
 
-        return if is_inside {
+        if is_inside {
             (self.m - p) * 0.0001
         } else {
             self.m - p
-        };
+        }
     }
 }
 
@@ -79,7 +79,7 @@ impl Cuboid {
     }
 
     pub fn vec_to(&self, p: vec3f) -> vec3f {
-        -p.sub(self.m).abs().sub(self.r).map(|c| c.max(0.))
+        p.sub(self.m).abs().sub(self.r).map(|c| c.max(0.))
     }
 }
 

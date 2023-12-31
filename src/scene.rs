@@ -1,6 +1,7 @@
 use crate::*;
 use anyhow::Result;
 use itertools::Itertools;
+use na::ComplexField;
 use rayon::prelude::*;
 
 #[derive(Debug, Default)]
@@ -19,8 +20,11 @@ impl Scene {
             .min_by(|a, b| a.dist(p).partial_cmp(&b.dist(p)).unwrap())
     }
 
-    // camera at origin pointed at +x
     pub fn render(&self, width: usize, height: usize) -> Image {
+        self.render_bounces(width, height, 0)
+    }
+
+    pub fn render_bounces(&self, width: usize, height: usize, bounces: usize) -> Image {
         let mut res = Image::new(width, height);
         let colors = (0..height)
             .cartesian_product(0..width)
@@ -28,8 +32,8 @@ impl Scene {
             .par_iter()
             .map(|(y, x)| {
                 let x_pos = 0.;
-                let y_pos = -(*y as f32 / height as f32 - 0.5);
-                let z_pos = *x as f32 / width as f32 - 0.5;
+                let y_pos = -(*y as f32 / height as f32 - 0.5001);
+                let z_pos = *x as f32 / width as f32 - 0.5001;
                 let y_pos = y_pos * height as f32 / width as f32;
 
                 let pos = vec3f::new(x_pos, y_pos, z_pos);
@@ -39,16 +43,32 @@ impl Scene {
                     pos,
                     dir: (target - pos).normalize(),
                 };
-
-                for _ in 0..100 {
+                for _ in 0..500 {
                     ray.step(self);
                 }
-                ray.color(self)
-                // if ray.march(self) {
-                //     Color::black()
-                // } else {
-                //     Color::white()
-                // };
+
+                let (c, p) = ray.color(self);
+                let mut color = c * p;
+                let mut light_remaining = 1. - p;
+
+                for _ in 0..bounces {
+                    if light_remaining.abs() < 0.0001 {
+                        break;
+                    }
+                    ray = Ray {
+                        pos: ray.pos,
+                        dir: ray.vec_closest(&self).unwrap(),
+                    };
+
+                    for _ in 0..500 {
+                        ray.step(self);
+                    }
+                    let (c, p) = ray.color(self);
+                    color += light_remaining * c * p;
+                    light_remaining -= light_remaining * p;
+                }
+
+                color.map(|c| c.clamp(0., 1.)).into()
             })
             .collect::<Vec<_>>();
 

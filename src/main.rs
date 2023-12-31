@@ -31,14 +31,14 @@ fn main() -> Result<()> {
 
     
     let x1 = 2.;
-    let y1 = 0.5;
-    let z1 = -1.;
-    let o = 0.5;
+    let y1 = 0.25;
+    let z1 = -1.5;
+    let o = 0.75;
     
     s.add(Sphere::from(3., 0., 0., 0.5));
     s.add(Cuboid::from(x1, y1, z1, x1 + o, y1 + o, z1 + o));
 
-    let img = s.render(1920, 1080);
+    let img = s.render_bounces(3840, 2160, 1);
     img.save("black.png")?;
 
     // dbg!(s, Ray::default());
