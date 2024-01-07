@@ -2,18 +2,21 @@ extern crate nalgebra as na;
 
 use std::ops::Sub;
 
+use crate::image::*;
 use crate::ray::*;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Cuboid {
-    pub m: vec3f,
-    pub r: vec3f,
+    m: vec3f,
+    r: vec3f,
+    col: Color,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Sphere {
-    pub m: vec3f,
-    pub r: f32,
+    m: vec3f,
+    r: f32,
+    col: Color,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -36,13 +39,21 @@ impl Object {
             Object::Sphere(c) => c.vec_to(p),
         }
     }
+
+    pub fn color(&self) -> Color {
+        match self {
+            Object::Cuboid(c) => c.col,
+            Object::Sphere(c) => c.col,
+        }
+    }
 }
 
 impl Sphere {
-    pub fn from(x: f32, y: f32, z: f32, r: f32) -> Self {
+    pub fn from(x: f32, y: f32, z: f32, r: f32, col: Color) -> Self {
         Sphere {
             m: vec3f::new(x, y, z),
             r,
+            col,
         }
     }
 
@@ -64,13 +75,14 @@ impl Sphere {
 }
 
 impl Cuboid {
-    pub fn from(x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) -> Cuboid {
+    pub fn from(x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32, col: Color) -> Cuboid {
         let bl = vec3f::new(x1, y1, z1);
         let tr = vec3f::new(x2, y2, z2);
 
         Cuboid {
             m: (bl + tr) / 2.,
             r: (tr - bl) / 2.,
+            col,
         }
     }
 
@@ -104,6 +116,7 @@ mod dist_tests {
         let s = Sphere {
             m: vec3f::zeros(),
             r: 1.,
+            col: Color::white(),
         };
 
         assert!(close_enough(s.dist(vec3f::zeros()), 0.));
@@ -114,6 +127,7 @@ mod dist_tests {
         let s = Sphere {
             m: vec3f::zeros(),
             r: 2.,
+            col: Color::white(),
         };
 
         assert_eq!(s.dist(vec3f::new(3., 0., 0.)), 1.);
@@ -124,6 +138,7 @@ mod dist_tests {
         let c = Cuboid {
             m: vec3f::zeros(),
             r: vec3f::from_element(1.),
+            col: Color::white(),
         };
 
         assert!(close_enough(c.dist(vec3f::zeros()), 0.));
@@ -135,6 +150,7 @@ mod dist_tests {
         let c = Cuboid {
             m: vec3f::zeros(),
             r: vec3f::from_element(2.),
+            col: Color::white(),
         };
 
         assert!(close_enough(c.dist(vec3f::new(4., 0., 0.)), 2.));

@@ -15,6 +15,12 @@ impl From<vec3f> for Color {
     }
 }
 
+impl From<Color> for vec3f {
+    fn from(value: Color) -> Self {
+        vec3f::new(value.r, value.g, value.b)
+    }
+}
+
 impl Color {
     pub fn new(r: f32, g: f32, b: f32) -> Color {
         Color { r, g, b }
@@ -26,6 +32,18 @@ impl Color {
 
     pub fn white() -> Color {
         Color::new(1., 1., 1.)
+    }
+
+    pub fn red() -> Color {
+        Color::new(1., 0., 0.)
+    }
+
+    pub fn green() -> Color {
+        Color::new(0., 1., 0.)
+    }
+
+    pub fn blue() -> Color {
+        Color::new(0., 0., 1.)
     }
 }
 

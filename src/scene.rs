@@ -21,10 +21,10 @@ impl Scene {
     }
 
     pub fn render(&self, width: usize, height: usize) -> Image {
-        self.render_bounces(width, height, 0)
+        self.render_with_bounces(width, height, 0)
     }
 
-    pub fn render_bounces(&self, width: usize, height: usize, bounces: usize) -> Image {
+    pub fn render_with_bounces(&self, width: usize, height: usize, bounces: usize) -> Image {
         let mut res = Image::new(width, height);
         let colors = (0..height)
             .cartesian_product(0..width)
@@ -32,8 +32,8 @@ impl Scene {
             .par_iter()
             .map(|(y, x)| {
                 let x_pos = 0.;
-                let y_pos = -(*y as f32 / height as f32 - 0.5001);
-                let z_pos = *x as f32 / width as f32 - 0.5001;
+                let y_pos = -(*y as f32 / height as f32 - 0.5 + 1e-6);
+                let z_pos = *x as f32 / width as f32 - 0.5 + 1e-6;
                 let y_pos = y_pos * height as f32 / width as f32;
 
                 let pos = vec3f::new(x_pos, y_pos, z_pos);
@@ -43,31 +43,51 @@ impl Scene {
                     pos,
                     dir: (target - pos).normalize(),
                 };
-                for _ in 0..500 {
+                for _ in 0..1024 {
                     ray.step(self);
                 }
 
                 let (c, p) = ray.color(self);
-                let mut color = c * p;
+                let mut color = c;
                 let mut light_remaining = 1. - p;
+                let p = 1. - (1. - p).powi(2);
 
                 for _ in 0..bounces {
-                    if light_remaining.abs() < 0.0001 {
+                    if light_remaining.abs() < 1e-2 {
                         break;
                     }
                     let normal = -ray.vec_closest(&self).unwrap().normalize();
-                    ray = Ray {
-                        pos: ray.pos,
-                        dir: normal,
-                    };
+                    let old_dir = ray.dir;
 
-                    for _ in 0..500 {
-                        ray.step(self);
+                    let new_rays = 1;
+
+                    let mut avg_color = vec3f::zeros();
+                    let mut avg_light_used = 0.;
+
+                    for _ in 0..new_rays {
+                        let old_ray = ray;
+                        let mut ray = Ray {
+                            pos: old_ray.pos,
+                            dir: normal * 2. + old_dir,
+                        };
+                        ray.pos += 1e-2 * ray.dir;
+
+                        for _ in 0..1024 {
+                            ray.step(self);
+                        }
+                        let (c, p) = ray.color(self);
+
+                        // let p = 1. - (1. - p).powi(2);
+
+                        avg_color += light_remaining * c * p;
+                        avg_light_used += light_remaining * p;
                     }
-                    let (c, p) = ray.color(self);
-                    color += light_remaining * c * (1. - p);
-                    light_remaining -= light_remaining * p;
+
+                    color += avg_color / new_rays as f32;
+                    light_remaining -= avg_light_used / new_rays as f32;
                 }
+
+                color += light_remaining * vec3f::from(Color::white());
 
                 color.map(|c| c.clamp(0., 1.)).into()
             })

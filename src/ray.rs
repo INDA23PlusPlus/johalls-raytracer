@@ -3,7 +3,7 @@ extern crate nalgebra as na;
 #[allow(non_camel_case_types)]
 pub type vec3f = na::Vector3<f32>;
 
-use std::ops::Sub;
+use std::ops::{Sub, Mul};
 
 use crate::*;
 
@@ -24,7 +24,7 @@ impl Ray {
 
     pub fn step(&mut self, scene: &Scene) {
         let closest = scene.closest(self.pos).unwrap();
-        let d = closest.dist(self.pos).clamp(0., 1.);
+        let d = closest.dist(self.pos).clamp(0., 16.);
         self.pos += self.dir * d;
     }
 
@@ -40,16 +40,17 @@ impl Ray {
         if d < 1e-3 {
             let dot = closest
                 .vec_to(
-                    self.pos - self.dir * 0.001, /* avoid clipping into objects */
+                    self.pos - self.dir * 5e-2, /* avoid clipping into objects */
                 )
                 .normalize()
                 .dot(&self.dir)
                 .abs()
                 .clamp(0., 1.);
-            match closest {
-                Object::Cuboid(_) => (vec3f::new(1., 0., 0.), dot),
-                Object::Sphere(_) => (vec3f::new(0., 1., 0.), dot),
-            }
+            (closest.color().into(), dot)
+            // match closest {
+            //     Object::Cuboid(_) => (vec3f::new(1., 0., 0.), dot),
+            //     Object::Sphere(_) => (vec3f::new(0., 1., 0.), dot),
+            // }
         } else {
             (vec3f::new(1., 1., 1.), 1.)
         }
